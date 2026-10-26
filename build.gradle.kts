@@ -3,7 +3,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 plugins {
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom")
     id("com.github.gmazzo.buildconfig")
     java
 }
@@ -15,7 +15,6 @@ val archives_base_name: String by project
 val minecraft_version: String by project
 val loader_version: String by project
 val fabric_version: String by project
-val catformat_version: String by project
 
 val USING_GIT = Paths.get(rootDir.absolutePath).resolve(".git").toFile().exists()
 val GIT_HASH = execute("git rev-parse --short HEAD")
@@ -61,12 +60,8 @@ loom {
 
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft_version")
-    mappings(loom.officialMojangMappings())
-    modImplementation("net.fabricmc:fabric-loader:$loader_version")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:$fabric_version")
-
-    include(implementation("com.github.cattyngmd.catformat:catformat-core:$catformat_version")!!)
-    include(modImplementation("com.github.cattyngmd.catformat:catformat-fabric:$catformat_version")!!)
+    implementation("net.fabricmc:fabric-loader:$loader_version")
+    implementation("net.fabricmc.fabric-api:fabric-api:$fabric_version")
 }
 
 tasks.processResources {
@@ -85,14 +80,15 @@ tasks.processResources {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release = 21
+    options.release = 25
+    options.compilerArgs.addAll(listOf("-Xmaxerrs", "2000"))
     dependsOn("generateBuildConfig")
 }
 
 java {
     withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 tasks.named<Jar>("sourcesJar") {

@@ -5,7 +5,7 @@ import me.alpha432.oyvey.features.Feature;
 import me.alpha432.oyvey.features.gui.items.buttons.ModuleButton;
 import me.alpha432.oyvey.features.modules.Module;
 import me.alpha432.oyvey.features.modules.client.HudModule;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -38,7 +38,7 @@ public class HudEditorScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         anyHover = false;
         this.components.forEach(component -> component.drawScreen(context, mouseX, mouseY, delta));
     }
@@ -73,7 +73,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent input) {
-        this.components.forEach(component -> component.onKeyTyped(input.codepointAsString(), input.modifiers()));
+        this.components.forEach(component -> component.onKeyTyped(input.codepointAsString(), 0));
         return super.charTyped(input);
     }
 
@@ -83,7 +83,7 @@ public class HudEditorScreen extends Screen {
     }
 
     @Override // ignore 1.21.8 menu blur thing
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
     }
 
     public ArrayList<Widget> getComponents() {

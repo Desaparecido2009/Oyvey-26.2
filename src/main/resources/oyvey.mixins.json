@@ -15,7 +15,9 @@
     "render.MixinAvatarRenderer",
     "render.MixinChatComponent",
     "render.MixinDeltaTrackerTimer",
+    "render.MixinItemFeatureRenderer",
     "render.MixinLevelRenderer",
+    "render.MixinSubmitNodeCollection",
     "render.gui.MixinCommandSuggestions",
     "render.gui.MixinGui"
   ],

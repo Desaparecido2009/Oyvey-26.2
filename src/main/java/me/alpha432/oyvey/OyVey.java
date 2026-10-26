@@ -1,5 +1,6 @@
 package me.alpha432.oyvey;
 
+import me.alpha432.oyvey.debug.ChamsDebugHarness;
 import me.alpha432.oyvey.manager.*;
 import me.alpha432.oyvey.util.BuildConfig;
 import me.alpha432.oyvey.util.TextUtil;
@@ -55,6 +56,7 @@ public class OyVey implements ModInitializer, ClientModInitializer {
         friendManager.init();
 
         configManager.load();
+        ChamsDebugHarness.init();
         colorManager.init();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> configManager.save()));
 

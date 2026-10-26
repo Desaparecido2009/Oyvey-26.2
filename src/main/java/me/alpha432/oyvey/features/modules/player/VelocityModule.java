@@ -3,12 +3,14 @@ package me.alpha432.oyvey.features.modules.player;
 import me.alpha432.oyvey.event.impl.network.PacketEvent;
 import me.alpha432.oyvey.event.system.Subscribe;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 
+@Register
 public class VelocityModule extends Module {
     public VelocityModule() {
-        super("Velocity", "Removes velocity from explosions and entities", Category.PLAYER);
+        super("Removes velocity from explosions and entities", Category.PLAYER);
     }
 
     @Subscribe
@@ -16,7 +18,7 @@ public class VelocityModule extends Module {
         if (nullCheck())
             return;
 
-        if (event.getPacket() instanceof ClientboundSetEntityMotionPacket packet && packet.getId() == mc.player.getId()
+        if (event.getPacket() instanceof ClientboundSetEntityMotionPacket packet && packet.id() == mc.player.getId()
                 || event.getPacket() instanceof ClientboundExplodePacket) {
             event.cancel();
         }

@@ -1,15 +1,13 @@
 package me.alpha432.oyvey.mixin.render.gui;
 
-import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import me.alpha432.oyvey.OyVey;
 import me.alpha432.oyvey.manager.CommandManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,38 +22,47 @@ import java.util.concurrent.CompletableFuture;
 public abstract class MixinCommandSuggestions {
     @Shadow
     private CommandSuggestions.SuggestionsList suggestions;
+
     @Shadow
     private @Nullable CompletableFuture<Suggestions> pendingSuggestions;
-    @Shadow
-    private @Nullable ParseResults<ClientSuggestionProvider> currentParse;
+
     @Shadow
     boolean keepSuggestions;
+
+    @Shadow
+    private boolean allowSuggestions;
+
     @Shadow
     @Final
     EditBox input;
 
     @Shadow
-    protected abstract void updateUsageInfo();
+    public abstract void showSuggestions(boolean immediateNarration);
 
-    @SuppressWarnings("unchecked")
     @Inject(method = "updateCommandInfo", at = @At("RETURN"))
-    public void updateCommandInfo(CallbackInfo ci, @Local StringReader stringReader) {
+    private void oyvey$updateCommandInfo(CallbackInfo ci) {
         String prefix = OyVey.commandManager.getCommandPrefix();
-        if (!stringReader.canRead() || !stringReader.getString().startsWith(prefix)) {
+        String value = input.getValue();
+
+        if (prefix.isEmpty() || !value.startsWith(prefix)) {
             return;
         }
-        stringReader.setCursor(prefix.length());
 
-        CommandDispatcher<CommandManager> dispatcher = OyVey.commandManager.getDispatcher();
-        ParseResults<CommandManager> parse = dispatcher.parse(stringReader, OyVey.commandManager);
-        currentParse = (ParseResults<ClientSuggestionProvider>) (Object) parse;
-        if (suggestions == null || !keepSuggestions) {
-            pendingSuggestions = dispatcher.getCompletionSuggestions(parse, input.getCursorPosition());
-            pendingSuggestions.thenRun(() -> {
-                if (pendingSuggestions.isDone()) {
-                    updateUsageInfo();
-                }
-            });
+        StringReader reader = new StringReader(value);
+        reader.setCursor(Math.min(prefix.length(), value.length()));
+
+        ParseResults<CommandManager> parse = OyVey.commandManager.getDispatcher()
+                .parse(reader, OyVey.commandManager);
+
+        pendingSuggestions = OyVey.commandManager.getDispatcher()
+                .getCompletionSuggestions(parse, Math.max(prefix.length(), input.getCursorPosition()));
+
+        if (!keepSuggestions) {
+            suggestions = null;
+        }
+
+        if (allowSuggestions && Minecraft.getInstance().options.autoSuggestions().get()) {
+            showSuggestions(false);
         }
     }
 }

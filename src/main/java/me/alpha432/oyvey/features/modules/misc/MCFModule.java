@@ -3,22 +3,24 @@ package me.alpha432.oyvey.features.modules.misc;
 import me.alpha432.oyvey.OyVey;
 import me.alpha432.oyvey.features.commands.Command;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.lwjgl.glfw.GLFW;
 
 import static me.alpha432.oyvey.util.chat.SimpleSignature.from;
 
+@Register
 public class MCFModule extends Module {
     private boolean pressed;
 
     public MCFModule() {
-        super("MCF", "Middle click friend", Category.MISC);
+        super("Middle click friend", Category.MISC);
     }
 
     @Override
     public void onTick() {
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             pressed = false;
             return;
         }

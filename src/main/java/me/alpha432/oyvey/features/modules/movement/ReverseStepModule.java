@@ -1,10 +1,12 @@
 package me.alpha432.oyvey.features.modules.movement;
 
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 
+@Register
 public class ReverseStepModule extends Module {
     public ReverseStepModule() {
-        super("ReverseStep", "step but reversed..", Category.MOVEMENT);
+        super("step but reversed..", Category.MOVEMENT);
     }
 
     @Override

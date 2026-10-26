@@ -1,7 +1,8 @@
 package me.alpha432.oyvey.features.gui.items;
 
 import me.alpha432.oyvey.features.Feature;
-import net.minecraft.client.gui.GuiGraphics;
+import me.alpha432.oyvey.util.render.RenderUtil;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.*;
 
@@ -22,7 +23,7 @@ public class Item
         this.y = y;
     }
 
-    public void drawScreen(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
     }
 
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
@@ -60,6 +61,10 @@ public class Item
         return this.height;
     }
 
+    public float getAnimatedHeight() {
+        return this.getHeight();
+    }
+
     public void setHeight(int height) {
         this.height = height;
     }
@@ -73,12 +78,12 @@ public class Item
         return this.hidden;
     }
 
-    protected void drawString(GuiGraphics context, String text, double x, double y, Color color) {
+    protected void drawString(GuiGraphicsExtractor context, String text, double x, double y, Color color) {
         drawString(context, text, x, y, color.getRGB());
     }
 
-    protected void drawString(GuiGraphics context, String text, double x, double y, int color) {
-        context.drawString(mc.font, text, (int) x, (int) y, color);
+    protected void drawString(GuiGraphicsExtractor context, String text, double x, double y, int color) {
+        context.text(mc.font, text, (int) x, (int) y, RenderUtil.applyAlpha(color));
     }
 
     public boolean isHovering(int mouseX, int mouseY) {

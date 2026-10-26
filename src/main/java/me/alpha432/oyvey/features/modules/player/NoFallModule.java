@@ -2,11 +2,13 @@ package me.alpha432.oyvey.features.modules.player;
 
 import me.alpha432.oyvey.OyVey;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 
+@Register
 public class NoFallModule extends Module {
     public NoFallModule() {
-        super("NoFall", "Removes fall damage", Category.PLAYER);
+        super("Removes fall damage", Category.PLAYER);
     }
 
     @Override

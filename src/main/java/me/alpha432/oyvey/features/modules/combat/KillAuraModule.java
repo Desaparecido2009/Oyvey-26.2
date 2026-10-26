@@ -4,6 +4,7 @@ import me.alpha432.oyvey.OyVey;
 import me.alpha432.oyvey.event.impl.entity.player.TickEvent;
 import me.alpha432.oyvey.event.system.Subscribe;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import me.alpha432.oyvey.features.settings.Setting;
 import me.alpha432.oyvey.util.models.Angles;
 import net.minecraft.tags.ItemTags;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+@Register
 public class KillAuraModule extends Module {
     private final Setting<Float> delay = num("Delay", 1f, 0f, 1f);
     private final Setting<Float> range = num("Range", 3f, 1f, 6f);
@@ -20,7 +22,7 @@ public class KillAuraModule extends Module {
     private final Setting<Boolean> sync = bool("MovementSync", false);
 
     public KillAuraModule() {
-        super("KillAura", "Attacks nearby players.", Category.COMBAT);
+        super("Attacks nearby players.", Category.COMBAT);
     }
 
     @Subscribe public void onPreTick(TickEvent.Pre event) {

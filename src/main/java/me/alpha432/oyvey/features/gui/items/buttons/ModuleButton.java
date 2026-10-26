@@ -2,9 +2,12 @@ package me.alpha432.oyvey.features.gui.items.buttons;
 
 import me.alpha432.oyvey.features.gui.items.Item;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.client.ClickGuiModule;
 import me.alpha432.oyvey.features.settings.Bind;
 import me.alpha432.oyvey.features.settings.Setting;
-import net.minecraft.client.gui.GuiGraphics;
+import me.alpha432.oyvey.util.models.Animation;
+import me.alpha432.oyvey.util.render.ScissorUtil;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 
@@ -14,6 +17,7 @@ import java.util.List;
 public class ModuleButton
         extends Button {
     private final Module module;
+    private final Animation settingsAnimation = new Animation();
     private List<Item> items = new ArrayList<>();
     private boolean subOpen;
 
@@ -54,22 +58,23 @@ public class ModuleButton
     }
 
     @Override
-    public void drawScreen(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(context, mouseX, mouseY, partialTicks);
-        if (!this.items.isEmpty()) {
-            if (this.subOpen) {
-                float height = 16.0f;
-                for (Item item : this.items) {
-                    if (!item.isHidden()) {
-                        item.setLocation(this.x + 1.0f, this.y + height);
-                        item.setWidth(this.width - 9);
-                        item.drawScreen(context, mouseX, mouseY, partialTicks);
-                        height += item.getHeight() + 1f;
-                    }
-                    item.update();
-                }
-            }
+        if (this.items.isEmpty() || this.settingsProgress() <= 0.001f) {
+            return;
         }
+        float height = 16.0f;
+        ScissorUtil.push(context, Math.round(this.x), Math.round(this.y), Math.round(this.x + this.width) + 4, Math.round(this.y + this.getAnimatedHeight()));
+        for (Item item : this.items) {
+            if (!item.isHidden()) {
+                item.setLocation(this.x + 1.0f, this.y + height);
+                item.setWidth(this.width - 9);
+                item.drawScreen(context, mouseX, mouseY, partialTicks);
+                height += item.getAnimatedHeight() + 1f;
+            }
+            item.update();
+        }
+        ScissorUtil.pop(context);
     }
 
     @Override
@@ -78,6 +83,13 @@ public class ModuleButton
         if (!this.items.isEmpty()) {
             if (mouseButton == 1 && this.isHovering(mouseX, mouseY)) {
                 this.subOpen = !this.subOpen;
+                ClickGuiModule config = ClickGuiModule.getInstance();
+                if (config != null && config.animations.getValue()) {
+                    this.settingsAnimation.animateTo(this.subOpen ? 1.0f : 0.0f, Math.max(1L, config.animationDuration.getValue().longValue()),
+                            this.subOpen ? Animation.Easing.OUT_QUAD : Animation.Easing.IN_QUAD);
+                } else {
+                    this.settingsAnimation.set(this.subOpen ? 1.0f : 0.0f);
+                }
                 mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
             }
             if (this.subOpen) {
@@ -133,6 +145,29 @@ public class ModuleButton
             return height;
         }
         return 14;
+    }
+
+    @Override
+    public float getAnimatedHeight() {
+        return 14.0f + this.getSettingsHeight() * this.settingsProgress();
+    }
+
+    private float getSettingsHeight() {
+        float height = 2.0f;
+        for (Item item : this.items) {
+            if (item.isHidden()) continue;
+            height += item.getAnimatedHeight() + 1.0f;
+        }
+        return height;
+    }
+
+    private float settingsProgress() {
+        ClickGuiModule config = ClickGuiModule.getInstance();
+        if (config == null || !config.animations.getValue()) {
+            this.settingsAnimation.set(this.subOpen ? 1.0f : 0.0f);
+            return this.subOpen ? 1.0f : 0.0f;
+        }
+        return this.settingsAnimation.get();
     }
 
     public Module getModule() {

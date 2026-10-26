@@ -6,6 +6,7 @@ import me.alpha432.oyvey.event.system.Subscribe;
 import me.alpha432.oyvey.features.commands.Command;
 import me.alpha432.oyvey.features.gui.OyVeyGui;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import me.alpha432.oyvey.features.settings.Setting;
 import org.lwjgl.glfw.GLFW;
 
@@ -13,10 +14,13 @@ import java.awt.*;
 
 import static me.alpha432.oyvey.features.commands.MessageSignatures.GENERAL;
 
+@Register
 public class ClickGuiModule extends Module {
     private static ClickGuiModule INSTANCE;
 
     public final Setting<String> prefix = str("Prefix", ".");
+    public final Setting<Boolean> animations = bool("Animations", true);
+    public final Setting<Integer> animationDuration = num("AnimationDuration", 150, 50, 400);
     public final Setting<Color> color = color("Color", 0, 0, 255, 180);
     public final Setting<Color> topColor = color("TopColor", 0, 0, 150, 240);
     public final Setting<Boolean> rainbow = bool("Rainbow", false);
@@ -25,8 +29,9 @@ public class ClickGuiModule extends Module {
     public final Setting<Float> rainbowSaturation = num("Saturation", 150.0f, 1.0f, 255.0f);
 
     public ClickGuiModule() {
-        super("ClickGui", "Opens the ClickGui", Module.Category.CLIENT);
+        super("Opens the ClickGui", Module.Category.CLIENT);
         setBind(GLFW.GLFW_KEY_RIGHT_SHIFT);
+        animationDuration.setVisibility(v -> animations.getValue());
         rainbowHue.setVisibility(v -> rainbow.getValue());
         rainbowBrightness.setVisibility(v -> rainbow.getValue());
         rainbowSaturation.setVisibility(v -> rainbow.getValue());
@@ -51,7 +56,7 @@ public class ClickGuiModule extends Module {
         if (nullCheck()) {
             return;
         }
-        mc.setScreen(OyVeyGui.getClickGui());
+        mc.gui.setScreen(OyVeyGui.getClickGui());
     }
 
     @Override
@@ -62,7 +67,7 @@ public class ClickGuiModule extends Module {
 
     @Override
     public void onTick() {
-        if (!(ClickGuiModule.mc.screen instanceof OyVeyGui)) {
+        if (!(ClickGuiModule.mc.gui.screen() instanceof OyVeyGui)) {
             this.disable();
         }
     }

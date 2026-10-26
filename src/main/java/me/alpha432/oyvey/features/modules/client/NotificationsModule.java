@@ -3,19 +3,21 @@ package me.alpha432.oyvey.features.modules.client;
 import me.alpha432.oyvey.event.impl.ClientEvent;
 import me.alpha432.oyvey.event.system.Subscribe;
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import me.alpha432.oyvey.features.settings.Setting;
 import me.alpha432.oyvey.util.TextUtil;
 import me.alpha432.oyvey.util.chat.ChatUtil;
 
 import static me.alpha432.oyvey.util.chat.SimpleSignature.from;
 
+@Register
 public class NotificationsModule extends Module {
     private static final String MODULE_FORMAT = "{gray} %s %s%s";
 
     public final Setting<Boolean> moduleToggle = bool("ModuleToggle", true);
 
     public NotificationsModule() {
-        super("Notifications", "Displays notifications for various client events", Category.CLIENT);
+        super("Displays notifications for various client events", Category.CLIENT);
     }
 
     @Subscribe

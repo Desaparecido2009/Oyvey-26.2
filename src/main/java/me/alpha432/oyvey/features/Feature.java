@@ -27,6 +27,10 @@ public class Feature
         return this.name;
     }
 
+    protected void setName(String name) {
+        this.name = name;
+    }
+
     public List<Setting<?>> getSettings() {
         return this.settings;
     }

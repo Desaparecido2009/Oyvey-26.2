@@ -37,6 +37,20 @@ public class Module extends Feature implements Jsonable, Toggleable {
         this.category = category;
     }
 
+    public Module(String description, Category category) {
+        super();
+        this.displayName = str("DisplayName", "");
+        this.description = description;
+        this.category = category;
+    }
+
+    public void setName(String name) {
+        super.setName(name);
+        if (this.displayName.getValue().isEmpty()) {
+            this.displayName.setValue(name);
+        }
+    }
+
     public void onEnable() {
     }
 

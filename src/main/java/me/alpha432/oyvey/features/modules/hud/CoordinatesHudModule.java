@@ -1,16 +1,18 @@
 package me.alpha432.oyvey.features.modules.hud;
 
 import me.alpha432.oyvey.event.impl.render.Render2DEvent;
+import me.alpha432.oyvey.features.modules.Register;
 import me.alpha432.oyvey.features.modules.client.HudModule;
 import me.alpha432.oyvey.features.settings.Setting;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+@Register("Coordinates")
 public class CoordinatesHudModule extends HudModule {
     public final Setting<Boolean> nether = bool("Nether", false);
 
     public CoordinatesHudModule() {
-        super("Coordinates", "Display coordinates", 150, 20);
+        super("Display coordinates", 150, 20);
     }
 
     @Override
@@ -33,7 +35,7 @@ public class CoordinatesHudModule extends HudModule {
             }
         }
 
-        e.getContext().drawString(mc.font, coordsStr,
+        e.getContext().text(mc.font, coordsStr,
                 (int) getX(), (int) getY(), -1);
 
         setWidth(mc.font.width(coordsStr));

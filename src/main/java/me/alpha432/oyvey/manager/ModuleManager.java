@@ -4,60 +4,52 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.alpha432.oyvey.OyVey;
 import me.alpha432.oyvey.event.impl.render.Render2DEvent;
-import me.alpha432.oyvey.features.gui.OyVeyGui;
-import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import me.alpha432.oyvey.event.impl.render.Render3DEvent;
 import me.alpha432.oyvey.features.Feature;
 import me.alpha432.oyvey.features.commands.ModuleCommand;
+import me.alpha432.oyvey.features.gui.OyVeyGui;
 import me.alpha432.oyvey.features.modules.Module;
-import me.alpha432.oyvey.features.modules.client.ClickGuiModule;
-import me.alpha432.oyvey.features.modules.client.HudEditorModule;
-import me.alpha432.oyvey.features.modules.client.NotificationsModule;
-import me.alpha432.oyvey.features.modules.combat.KillAuraModule;
-import me.alpha432.oyvey.features.modules.combat.CriticalsModule;
-import me.alpha432.oyvey.features.modules.combat.KeyPearlModule;
-import me.alpha432.oyvey.features.modules.hud.CoordinatesHudModule;
-import me.alpha432.oyvey.features.modules.hud.WatermarkHudModule;
-import me.alpha432.oyvey.features.modules.misc.MCFModule;
-import me.alpha432.oyvey.features.modules.movement.FastAccelModule;
-import me.alpha432.oyvey.features.modules.movement.ReverseStepModule;
-import me.alpha432.oyvey.features.modules.movement.StepModule;
-import me.alpha432.oyvey.features.modules.player.FastPlaceModule;
-import me.alpha432.oyvey.features.modules.player.NoFallModule;
-import me.alpha432.oyvey.features.modules.player.VelocityModule;
-import me.alpha432.oyvey.features.modules.render.BlockHighlightModule;
+import me.alpha432.oyvey.features.modules.Register;
 import me.alpha432.oyvey.util.traits.Jsonable;
 import me.alpha432.oyvey.util.traits.Util;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 public class ModuleManager implements Jsonable, Util {
     private static final Logger LOGGER = LoggerFactory.getLogger("ModuleManager");
+    private static final String MODULE_PACKAGE = "me.alpha432.oyvey.features.modules";
 
     private final Map<Class<? extends Module>, Module> fastRegistry = new HashMap<>();
     private final List<Module> modules = new ArrayList<>();
 
     public void init() {
-        register(new WatermarkHudModule());
-        register(new CoordinatesHudModule());
-        register(new HudEditorModule());
-        register(new ClickGuiModule());
-        register(new NotificationsModule());
-        register(new CriticalsModule());
-        register(new MCFModule());
-        register(new StepModule());
-        register(new ReverseStepModule());
-        register(new FastPlaceModule());
-        register(new VelocityModule());
-        register(new BlockHighlightModule());
-        register(new NoFallModule());
-        register(new KeyPearlModule());
-        register(new KillAuraModule());
-        register(new FastAccelModule());
+        for (Module module : discoverModules()) {
+            register(module);
+        }
 
         LOGGER.info("Registered {} modules", modules.size());
 
@@ -70,8 +62,138 @@ public class ModuleManager implements Jsonable, Util {
     }
 
     public void register(Module module) {
+        if (module.getName() == null || module.getName().isEmpty()) {
+            module.setName(nameFor(module.getClass()));
+        }
+
         getModules().add(module);
         fastRegistry.put(module.getClass(), module);
+    }
+
+    private List<Module> discoverModules() {
+        Set<Class<? extends Module>> types = new TreeSet<>(Comparator.comparing(Class::getName));
+        scanClassLoader(types);
+
+        if (types.isEmpty()) {
+            scanModContainer(types);
+        }
+
+        List<Module> discovered = new ArrayList<>();
+
+        for (Class<? extends Module> type : types) {
+            try {
+                Module module = type.getDeclaredConstructor().newInstance();
+                if (module.getName() == null || module.getName().isEmpty()) {
+                    module.setName(nameFor(type));
+                }
+                discovered.add(module);
+            } catch (ReflectiveOperationException e) {
+                LOGGER.error("Failed to instantiate module {}", type.getName(), e);
+            }
+        }
+
+        discovered.sort(Comparator
+                .comparingInt((Module module) -> module.getCategory().ordinal())
+                .thenComparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
+
+        return discovered;
+    }
+
+    private void scanClassLoader(Set<Class<? extends Module>> types) {
+        String packagePath = MODULE_PACKAGE.replace('.', '/');
+
+        try {
+            Enumeration<URL> resources = ModuleManager.class.getClassLoader().getResources(packagePath);
+
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                switch (url.getProtocol()) {
+                    case "file" -> scanDirectory(Paths.get(url.toURI()), types);
+                    case "jar" -> scanJar(url, packagePath, types);
+                    default -> {
+                    }
+                }
+            }
+        } catch (IOException | URISyntaxException e) {
+            LOGGER.error("Failed to scan module classes", e);
+        }
+    }
+
+    private void scanModContainer(Set<Class<? extends Module>> types) {
+        FabricLoader.getInstance().getModContainer("oyvey")
+                .flatMap(container -> container.findPath(MODULE_PACKAGE.replace('.', '/')))
+                .ifPresent(root -> scanDirectory(root, types));
+    }
+
+    private void scanDirectory(Path root, Set<Class<? extends Module>> types) {
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.filter(Files::isRegularFile)
+                    .map(root::relativize)
+                    .map(Path::toString)
+                    .filter(name -> name.endsWith(".class"))
+                    .filter(name -> !name.contains("$"))
+                    .forEach(name -> {
+                        String className = name.substring(0, name.length() - ".class".length())
+                                .replace(File.separatorChar, '.')
+                                .replace('/', '.');
+                        addModuleClass(MODULE_PACKAGE + "." + className, types);
+                    });
+        } catch (IOException e) {
+            LOGGER.error("Failed to scan module directory {}", root, e);
+        }
+    }
+
+    private void scanJar(URL url, String packagePath, Set<Class<? extends Module>> types) {
+        try {
+            JarURLConnection connection = (JarURLConnection) url.openConnection();
+            connection.setUseCaches(false);
+
+            try (JarFile jar = connection.getJarFile()) {
+                String prefix = packagePath + "/";
+
+                jar.stream()
+                        .filter(entry -> !entry.isDirectory())
+                        .map(JarEntry::getName)
+                        .filter(name -> name.startsWith(prefix))
+                        .filter(name -> name.endsWith(".class"))
+                        .filter(name -> !name.contains("$"))
+                        .forEach(name -> addModuleClass(
+                                name.substring(0, name.length() - ".class".length()).replace('/', '.'),
+                                types));
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to scan module jar {}", url, e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addModuleClass(String className, Set<Class<? extends Module>> types) {
+        try {
+            Class<?> type = Class.forName(className, false, ModuleManager.class.getClassLoader());
+
+            if (!Module.class.isAssignableFrom(type)
+                    || java.lang.reflect.Modifier.isAbstract(type.getModifiers())
+                    || !type.isAnnotationPresent(Register.class)) {
+                return;
+            }
+
+            types.add((Class<? extends Module>) type);
+        } catch (ClassNotFoundException | LinkageError e) {
+            LOGGER.warn("Skipping unloadable module class {}", className, e);
+        }
+    }
+
+    private static String nameFor(Class<? extends Module> type) {
+        Register register = type.getAnnotation(Register.class);
+
+        if (register != null && !register.value().isBlank()) {
+            return register.value();
+        }
+
+        String name = type.getSimpleName();
+        return name.endsWith("Module")
+                ? name.substring(0, name.length() - "Module".length())
+                : name;
     }
 
     public List<Module> getModules() {
@@ -126,18 +248,18 @@ public class ModuleManager implements Jsonable, Util {
 
     public void onKeyPressed(int key) {
         if (key <= 0) return;
-        if (mc.screen instanceof TitleScreen || mc.screen instanceof JoinMultiplayerScreen) {
-            if (ClickGuiModule.getInstance().getBind().getKey() == key) {
-                OyVeyGui.open(mc.screen);
+        if (mc.gui.screen() instanceof TitleScreen || mc.gui.screen() instanceof JoinMultiplayerScreen) {
+            if (me.alpha432.oyvey.features.modules.client.ClickGuiModule.getInstance().getBind().getKey() == key) {
+                OyVeyGui.open(mc.gui.screen());
             }
             return;
         }
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
         stream().filter(module -> module.getBind().getKey() == key).forEach(Module::toggle);
     }
 
     public void onMouseClicked(int button) {
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
         int key = -button - 2;
         stream().filter(module -> module.getBind().getKey() == key).forEach(Module::toggle);
     }

@@ -1,6 +1,7 @@
 package me.alpha432.oyvey.features.modules.combat;
 
 import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Register;
 import me.alpha432.oyvey.features.settings.Setting;
 import me.alpha432.oyvey.util.inventory.InventoryUtil;
 import me.alpha432.oyvey.util.inventory.Result;
@@ -9,11 +10,12 @@ import net.minecraft.world.item.Items;
 import static me.alpha432.oyvey.util.inventory.InventoryUtil.FULL_SCOPE;
 import static me.alpha432.oyvey.util.inventory.InventoryUtil.HOTBAR_SCOPE;
 
+@Register
 public class KeyPearlModule extends Module {
     private final Setting<Boolean> inventory = bool("Inventory", false);
 
     public KeyPearlModule() {
-        super("KeyPearl", "Throws a pearl when enabled.", Category.COMBAT);
+        super("Throws a pearl when enabled.", Category.COMBAT);
     }
 
     @Override
